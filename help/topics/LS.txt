@@ -1,0 +1,68 @@
+Topic: LS
+Summary: Lists files and directories, as the POSIX ls command does
+Origin: ls16
+Group: command
+Files: LS.EXE
+
+Syntax
+  LS [-aACdFhlrRt1] [drive:][path][filename] ...
+
+  filename     A file or directory to list; wildcards (* and ?) may be
+               used. The current directory if left out.
+  -a           Lists all entries: hidden and system ones, and . and ..
+  -A           Lists hidden and system entries, but not . and ..
+  -C           Lists names in columns, down then across.
+  -1           Lists one name a line.
+  -l           Long listing: attributes, size, date and time, name.
+  -h           With -l, shows sizes as 1.5K, 23M and so on.
+  -F           Adds / after directories and * after .COM, .EXE and
+               .BAT files.
+  -d           Lists directories themselves, not what is in them.
+  -R           Lists subdirectories too, and theirs.
+  -t           Sorts by the date and time last changed, newest first.
+  -r           Reverses the order of the sort.
+  --help       Shows a short help. --version shows the version.
+
+Examples
+  LS
+    Lists the current directory in columns.
+  LS -ltr C:\DOS
+    Lists C:\DOS in long form, the most recently changed file last.
+  LS -a A:\
+    Lists everything in the root of A:, hidden and system files too.
+  LS -CF *.EXE D:\GAMES
+    Lists the .EXE files here and the contents of D:\GAMES, in columns,
+    marking directories with / and programs with *.
+
+Exit status
+  0  Listed.
+  1  A file was not found, a directory could not be read, or an option
+     was not valid.
+
+Notes
+  Options are case-sensitive and may be grouped: -ltr is -l -t -r. They
+  may come before or after the files. Of -C, -1 and -l the last one given
+  wins, so -lC lists in columns and -Cl in long form. On the screen LS
+  lists in columns by default, fitting the screen's width; redirected to
+  a file or a pipe it lists one name a line. The COLUMNS environment
+  variable, if set, gives the width.
+
+  Names are shown in lower case; nothing on the disk is changed. Hidden
+  and system entries and . and .. are listed only with -a or -A, but a
+  file named on the command line is always listed. The volume label is
+  never listed. A drive's root directory has no . or .. entries on the
+  disk: -a lists a . for it, and no .., since a root has no parent.
+
+  The long form shows the attributes in the fixed order R (read-only),
+  H (hidden), S (system), D (directory) and A (archive), with - for one
+  not set, as in RHS-A, then the size in bytes, the date and time
+  (YYYY-MM-DD HH:MM) and the name. -F marks programs by their extension
+  (.COM, .EXE or .BAT), not by any attribute.
+
+  Names sort in character order. With -t, entries with the same time
+  (DOS keeps it to two seconds) sort by name; -r reverses the whole
+  order. A wildcard is matched by DOS, and each directory it matches is
+  listed with its contents, unless -d is given. A * with no . after it
+  matches extensions too, so LS A* is LS A*.*.
+
+  LS is ls16, from github.com/gr-dos/ls16, under the MIT license.
