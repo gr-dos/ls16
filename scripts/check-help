@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# Check a GR-DOS help topic (help/topics/NAME.txt) the way GR-DOS's
+# scripts/mkhelp will when it imports it (gr-dos/gr-dos#90, docs/help.md
+# there): a header of Topic, Summary, Origin, Group and Files lines, a
+# blank line, then the text; ASCII only, no tabs, no trailing blanks, and
+# lines of at most 79 characters.  The Topic is the file's name, in upper
+# case, and the first word of each example is that name.
+#
+# usage: scripts/check-help help/topics/LS.txt
+
+set -u
+
+f=$1
+name=$(basename "$f" .txt)
+bad=0
+
+fail() {
+    echo "$f: $*" >&2
+    bad=1
+}
+
+[ -f "$f" ] || { echo "$f: not found" >&2; exit 1; }
+
+i=0
+for field in Topic Summary Origin Group Files; do
+    i=$((i + 1))
+    line=$(sed -n "${i}p" "$f")
+    case $line in
+        "$field: "?*) ;;
+        *) fail "line $i: expected '$field: ...', got '$line'" ;;
+    esac
+done
+[ "$(sed -n 1p "$f")" = "Topic: $name" ] || fail "Topic is not $name"
+[ "$(sed -n 4p "$f")" = "Group: command" ] || fail "Group is not command"
+[ -z "$(sed -n 6p "$f")" ] || fail "line 6: expected a blank line"
+
+LC_ALL=C grep -n '[^ -~]' "$f" | sed 's/^/non-ASCII or tab: /' |
+    while read -r l; do echo "$f: $l" >&2; done
+LC_ALL=C grep -q '[^ -~]' "$f" && bad=1
+grep -n ' $' "$f" >/dev/null && fail "trailing blanks on line(s) $(grep -n ' $' "$f" | cut -d: -f1 | tr '\n' ' ')"
+long=$(awk 'length > 79 { printf "%d ", NR }' "$f")
+[ -z "$long" ] || fail "lines over 79 characters: $long"
+if grep -q "$(printf '\r')" "$f"; then
+    fail "CR line endings (the topic is LF text; GR-DOS makes it CRLF)"
+fi
+
+# examples: lines indented two blanks under "Examples", up to the next
+# heading, each a command starting with the topic's name
+awk -v name="$name" '
+    /^[^ ]/ { ex = ($0 == "Examples") ; next }
+    ex && /^  [^ ]/ {
+        split($0, w, " ")
+        if (toupper(w[1]) != name) { print FILENAME ": example not of " name ": " $0; bad = 1 }
+    }
+    END { exit bad }' "$f" >&2 || bad=1
+
+exit $bad
